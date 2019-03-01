@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, TemplateHaskell, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE CPP, LambdaCase, TemplateHaskell, TypeSynonymInstances, FlexibleInstances #-}
 
 {- |
   Module      :  Language.Haskell.Meta.Syntax.Translate
@@ -267,6 +267,7 @@ instance ToExp (Hs.Exp l) where
   toExp (Hs.ExpTypeSig _ e t)      = SigE (toExp e) (toType t)
   toExp e = todo "toExp" e
 
+
 toMatch :: Hs.Alt l -> Match
 toMatch (Hs.Alt _ p rhs ds) = Match (toPat p) (toBody rhs) (toDecs ds)
 
@@ -351,7 +352,13 @@ instance ToType (Hs.Type l) where
   toType (Hs.TyKind _ t k) = SigT (toType t) (toKind k)
   toType t@Hs.TyBang{} =
     nonsense "toType" "type cannot have strictness annotations in this context" t
+  toType (Hs.TyPromoted _ pro) = LitT (toLiteralType pro)
 
+toLiteralType :: Hs.Promoted l -> TyLit
+toLiteralType = \case
+  Hs.PromotedInteger _ i _  -> NumTyLit i
+  Hs.PromotedString _ str _ -> StrTyLit str
+  p -> todo "toLiteralType" p
 
 toStrictType :: Hs.Type l -> StrictType
 #if MIN_VERSION_template_haskell(2,11,0)
