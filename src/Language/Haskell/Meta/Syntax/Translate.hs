@@ -236,7 +236,9 @@ instance ToExp (Hs.Exp l) where
   toExp (Hs.Con _ n)                 = ConE (toName n)
   toExp (Hs.Lit _ l)                 = LitE (toLit l)
   toExp (Hs.InfixApp _ e o f)        = UInfixE (toExp e) (toExp o) (toExp f)
-  toExp (Hs.App _ e f)               = AppE (toExp e) (toExp f)
+  toExp (Hs.App _ e f)               = case f of
+                                         Hs.TypeApp _ ty -> AppTypeE (toExp e) (toType ty)
+                                         _               -> AppE (toExp e) (toExp f)
   toExp (Hs.NegApp _ e)              = AppE (VarE 'negate) (toExp e)
   toExp (Hs.Lambda _ ps e)         = LamE (fmap toPat ps) (toExp e)
   toExp (Hs.Let _ bs e)              = LetE (toDecs bs) (toExp e)
@@ -264,7 +266,6 @@ instance ToExp (Hs.Exp l) where
     convert s = noTH "toExp ListComp" s
   toExp (Hs.ExpTypeSig _ e t)      = SigE (toExp e) (toType t)
   toExp e = todo "toExp" e
-
 
 toMatch :: Hs.Alt l -> Match
 toMatch (Hs.Alt _ p rhs ds) = Match (toPat p) (toBody rhs) (toDecs ds)
